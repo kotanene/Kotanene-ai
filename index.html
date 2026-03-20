@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kotanene AI">
+    <link rel="manifest" href="/manifest.json">
+    <title>Kotanene AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="aurora"></div>
+
+    <!-- Kullanıcı adı modal -->
+    <div class="modal-overlay" id="usernameModal">
+        <div class="modal">
+            <div class="modal-icon">✦</div>
+            <h2>Kotanene AI'ya<br>Hoş Geldin</h2>
+            <p>Ömer Kaan Aydemir'in yapay zeka asistanı</p>
+            <input type="text" id="usernameInput" placeholder="Adını yaz..." maxlength="20" autocomplete="off">
+            <button id="usernameBtn">Başla <span>→</span></button>
+            <small>Girmek istemiyorsan boş bırak</small>
+        </div>
+    </div>
+
+    <!-- Sol sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">✦ Kotanene AI</div>
+            <button class="sidebar-close" id="sidebarClose">✕</button>
+        </div>
+
+        <button class="new-chat-btn" id="newChatBtn">+ Yeni Sohbet</button>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Model</div>
+            <div class="model-list" id="modelList"></div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Kişilik</div>
+            <div class="personality-list">
+                <button class="pers-btn active" data-p="normal">😊 Normal</button>
+                <button class="pers-btn" data-p="komik">😂 Komik</button>
+                <button class="pers-btn" data-p="ogretmen">📚 Öğretmen</button>
+                <button class="pers-btn" data-p="ciddi">💼 Ciddi</button>
+                <button class="pers-btn" data-p="kodcu">👨‍💻 Kodcu</button>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Dil</div>
+            <div class="lang-toggle">
+                <button class="lang-btn active" data-lang="tr">🇹🇷 Türkçe</button>
+                <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+            </div>
+        </div>
+
+        <div class="sidebar-stats">
+            <div id="sideStatVisitors">👥 — ziyaretçi</div>
+            <div id="sideStatMessages">💬 — mesaj</div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="side-action-btn" id="exportBtnSide">💾 Sohbeti Kaydet</button>
+            <button class="side-action-btn danger" id="clearBtnSide">🗑️ Temizle</button>
+            <button class="side-action-btn" id="themeToggleSide">🌙 Tema</button>
+        </div>
+    </div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Ana container -->
+    <div class="main">
+        <!-- Top bar -->
+        <div class="topbar">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <div class="topbar-center">
+                <div class="status-dot"></div>
+                <span id="currentModelLabel">Llama 3.3 70B</span>
+            </div>
+            <div class="topbar-right">
+                <button class="icon-action" id="searchToggle" title="Web'de ara">🔍</button>
+                <button class="icon-action" id="themeToggleTop">🌙</button>
+            </div>
+        </div>
+
+        <!-- Web arama bar -->
+        <div class="search-bar" id="searchBar" style="display:none">
+            <input type="text" id="webSearchInput" placeholder="Web'de ara...">
+            <button id="webSearchBtn">Ara</button>
+            <button id="searchClose">✕</button>
+        </div>
+
+        <!-- Arama sonuçları -->
+        <div class="search-results" id="searchResults" style="display:none"></div>
+
+        <!-- Mesajlar -->
+        <div class="messages" id="messages">
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-icon">✦</div>
+                <h1>Kotanene AI</h1>
+                <p>GPT'den hızlı, bedavadan iyi 🚀</p>
+                <div class="suggestion-grid">
+                    <button class="suggestion" onclick="useSuggestion(this)">Türkiye'nin başkenti neresi ve neden Ankara seçildi?</button>
+                    <button class="suggestion" onclick="useSuggestion(this)">Python'da basit bir hesap makinesi kodla</button>
+                    <button class="suggestion" onclick="useSuggestion(this)">Yapay zeka nasıl çalışır? Basitçe anlat</button>
+                    <button class="suggestion" onclick="useSuggestion(this)">Bugün motive olmak için ne yapmalıyım?</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resim önizleme -->
+        <div class="image-preview-bar" id="imagePreview" style="display:none">
+            <img id="previewImg" src="" alt="">
+            <span id="previewName"></span>
+            <button id="removeImage">✕</button>
+        </div>
+
+        <!-- Ses kayıt -->
+        <div class="recording-bar" id="recordingBar" style="display:none">
+            <div class="rec-anim"><span></span><span></span><span></span><span></span></div>
+            <span>Dinleniyor...</span>
+            <button id="stopRecording">■ Durdur</button>
+        </div>
+
+        <!-- Input -->
+        <div class="input-wrap">
+            <div class="input-box">
+                <div class="input-actions-left">
+                    <button class="action-btn" id="imageBtn" title="Resim ekle">🖼</button>
+                    <button class="action-btn" id="voiceBtn" title="Sesli mesaj">🎙</button>
+                </div>
+                <textarea id="userInput" placeholder="Mesaj yaz..." rows="1"></textarea>
+                <button class="send-btn" id="sendBtn" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+            <input type="file" id="imageInput" accept="image/*" style="display:none">
+            <div class="input-footer">
+                <span>Enter = gönder · Shift+Enter = yeni satır</span>
+                <span id="charCount">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
