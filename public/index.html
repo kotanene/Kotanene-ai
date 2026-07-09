@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Kotanene AI">
+    <link rel="manifest" href="/manifest.json">
+    <title>Kotanene AI v6</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<div class="splash" id="splash">
+    <div class="splash-inner">
+        <div class="splash-orb"></div>
+        <h1>Kotanene AI</h1>
+        <p>v6 · Ultimate Edition</p>
+        <div class="splash-progress"><div class="splash-bar"></div></div>
+    </div>
+</div>
+
+<div class="overlay" id="authOverlay" style="display:none">
+    <div class="modal">
+        <div class="modal-brand">✦ Kotanene AI</div>
+        <div class="tab-row">
+            <button class="tab active" onclick="switchTab('login')">Giriş</button>
+            <button class="tab" onclick="switchTab('register')">Kayıt</button>
+            <button class="tab" onclick="guestMode()">Misafir →</button>
+        </div>
+        <div id="loginForm">
+            <input type="email" id="loginEmail" class="modal-input" placeholder="Email">
+            <input type="password" id="loginPass" class="modal-input" placeholder="Şifre">
+            <button class="modal-btn" onclick="doLogin()">Giriş Yap</button>
+        </div>
+        <div id="regForm" style="display:none">
+            <input type="text" id="regUser" class="modal-input" placeholder="Kullanıcı adı">
+            <input type="email" id="regEmail" class="modal-input" placeholder="Email">
+            <input type="password" id="regPass" class="modal-input" placeholder="Şifre (min 6)">
+            <button class="modal-btn" onclick="doRegister()">Kayıt Ol</button>
+        </div>
+        <div class="modal-error" id="authErr"></div>
+    </div>
+</div>
+
+<div class="overlay" id="premiumOverlay" style="display:none">
+    <div class="modal">
+        <button class="close-btn" onclick="closePremium()">✕</button>
+        <div style="font-size:2.5rem;text-align:center;margin-bottom:12px">👑</div>
+        <h2 style="text-align:center;margin-bottom:6px">Premium'a Geç</h2>
+        <p style="text-align:center;color:var(--t2);font-size:.82rem;margin-bottom:18px">Sınırsız mesaj, tüm modeller</p>
+        <div class="plan-row">
+            <div class="plan-box">
+                <div class="plan-name">Ücretsiz</div>
+                <div class="plan-price">₺0</div>
+                <div class="plan-feat">• Günde 30 mesaj</div>
+                <div class="plan-feat">• 4 model</div>
+            </div>
+            <div class="plan-box featured">
+                <div class="plan-badge">⭐ Önerilen</div>
+                <div class="plan-name">Premium</div>
+                <div class="plan-price">₺99<small>/ay</small></div>
+                <div class="plan-feat">• Sınırsız mesaj</div>
+                <div class="plan-feat">• 6 model</div>
+                <div class="plan-feat">• Hafıza sistemi</div>
+                <div class="plan-feat">• Görsel oluşturma</div>
+                <button class="upgrade-btn" onclick="doUpgrade()">Premium'a Geç →</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="overlay" id="imgGenOverlay" style="display:none">
+    <div class="modal">
+        <button class="close-btn" onclick="closeImgGen()">✕</button>
+        <h2>🎨 Görsel Oluştur</h2>
+        <p style="color:var(--t2);font-size:.82rem;margin:8px 0 14px">Türkçe tarif et, otomatik oluşturulsun</p>
+        <textarea id="imgPrompt" class="modal-input" style="min-height:80px;resize:none" placeholder="Gün batımında sahilde oturan bir robot..."></textarea>
+        <button class="modal-btn" id="genBtn" onclick="generateImage()">✨ Oluştur</button>
+        <div id="imgResult"></div>
+    </div>
+</div>
+
+<div class="overlay" id="memoryOverlay" style="display:none">
+    <div class="modal">
+        <button class="close-btn" onclick="closeMemory()">✕</button>
+        <h2>🧠 Hafıza Yönetimi</h2>
+        <p style="color:var(--t2);font-size:.82rem;margin:8px 0 14px">AI seni hatırlasın istediğin bilgileri ekle</p>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input id="newMemory" class="modal-input" style="flex:1;margin:0" placeholder="Örn: Matematik öğrencisiyim">
+            <button class="modal-btn" style="width:auto;padding:10px 16px;margin:0;flex-shrink:0" onclick="addMemory()">Ekle</button>
+        </div>
+        <div id="memoryList"></div>
+    </div>
+</div>
+
+<div class="overlay" id="toolsOverlay" style="display:none">
+    <div class="modal">
+        <button class="close-btn" onclick="closeTools()">✕</button>
+        <h2>🛠 Özel Araçlar</h2>
+        <div class="tools-grid">
+            <button class="tool-card" onclick="runTool('math')">🔢<span>Matematik</span></button>
+            <button class="tool-card" onclick="runTool('summary')">📝<span>Özet</span></button>
+            <button class="tool-card" onclick="runTool('translate')">🌍<span>Çeviri</span></button>
+            <button class="tool-card" onclick="runTool('code')">💻<span>Kod Analiz</span></button>
+        </div>
+        <div id="toolArea" style="margin-top:14px;display:none">
+            <textarea id="toolInput" class="modal-input" style="min-height:80px;resize:none" placeholder="Metni buraya yaz..."></textarea>
+            <div id="toolLang" style="display:none;margin-bottom:8px">
+                <select id="translateTo" class="modal-input" style="margin:0">
+                    <option>İngilizce</option><option>Almanca</option><option>Fransızca</option>
+                    <option>İspanyolca</option><option>Arapça</option><option>Japonca</option>
+                </select>
+            </div>
+            <button class="modal-btn" id="toolRunBtn" onclick="executeTool()">Çalıştır</button>
+            <div id="toolResult" style="margin-top:12px"></div>
+        </div>
+    </div>
+</div>
+
+<div class="layout" id="layout" style="display:none">
+    <div class="sidebar" id="sidebar">
+        <div class="sb-head">
+            <div class="sb-logo">✦ Kotanene AI</div>
+            <button class="sb-close" id="sbClose">✕</button>
+        </div>
+        <div class="user-pill">
+            <div class="user-ava" id="userAva">?</div>
+            <div>
+                <div class="user-name" id="userName">Misafir</div>
+                <div class="user-plan" id="userPlan">Ücretsiz</div>
+            </div>
+            <button class="mem-btn" onclick="openMemory()" title="Hafıza">🧠</button>
+        </div>
+        <div class="usage-wrap" id="usageWrap">
+            <div class="usage-top"><span id="usageTxt">0/30 mesaj</span><button onclick="openPremium()" class="prem-link">👑 Premium</button></div>
+            <div class="usage-track"><div class="usage-fill" id="usageFill"></div></div>
+        </div>
+        <button class="new-chat" id="newChatBtn">＋ Yeni Sohbet</button>
+        <input class="sb-search" id="chatSearch" placeholder="🔍 Sohbet ara..." oninput="filterChats()">
+        <div class="chat-list" id="chatList"></div>
+        <div class="sb-div"></div>
+        <div class="sb-sec">
+            <div class="sb-lbl">Model</div>
+            <div id="modelList"></div>
+        </div>
+        <div class="sb-sec">
+            <div class="sb-lbl">Kişilik</div>
+            <div class="pers-list">
+                <button class="pers active" data-p="normal">😊 Normal</button>
+                <button class="pers" data-p="komik">😂 Komik</button>
+                <button class="pers" data-p="ogretmen">📚 Öğretmen</button>
+                <button class="pers" data-p="ciddi">💼 Ciddi</button>
+                <button class="pers" data-p="kodcu">👨‍💻 Kodcu</button>
+                <button class="pers" data-p="bilim">🔬 Bilim</button>
+                <button class="pers" data-p="psikolog">💜 Psikolog</button>
+            </div>
+        </div>
+        <div class="sb-sec">
+            <div class="sb-lbl">Dil</div>
+            <div class="lang-row">
+                <button class="lang active" data-lang="tr">🇹🇷 TR</button>
+                <button class="lang" data-lang="en">🇬🇧 EN</button>
+            </div>
+        </div>
+        <div class="sb-footer">
+            <div class="sb-stats" id="sbStats">👥 — · 💬 —</div>
+            <button class="sb-act" id="exportBtn">💾 Sohbeti Kaydet</button>
+            <button class="sb-act" id="themeBtn">🌙 Tema</button>
+            <button class="sb-act danger" id="logoutBtn">🚪 Çıkış</button>
+        </div>
+    </div>
+    <div class="sb-overlay" id="sbOverlay"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <div class="topbar-mid">
+                <div class="online-dot"></div>
+                <span id="modelLabel">Llama 3.3 70B 🧠</span>
+            </div>
+            <div class="topbar-right">
+                <button class="tb-btn" id="webSearchToggle" title="Web Ara">🔍</button>
+                <button class="tb-btn" onclick="openImgGen()" title="Görsel Oluştur">🎨</button>
+                <button class="tb-btn" onclick="openTools()" title="Araçlar">🛠</button>
+                <button class="tb-btn" id="msgSearchBtn" title="Mesajlarda Ara">🔎</button>
+                <button class="tb-btn" id="themeTopBtn">🌙</button>
+            </div>
+        </div>
+
+        <div class="web-bar" id="webBar" style="display:none">
+            <input id="webQ" placeholder="Web'de ara...">
+            <button onclick="doWebSearch()">Ara</button>
+            <button onclick="closeWebBar()">✕</button>
+        </div>
+        <div id="webResults" style="display:none"></div>
+
+        <div class="msg-bar" id="msgBar" style="display:none">
+            <input id="msgQ" placeholder="Mesajlarda ara..." oninput="searchMsgs()">
+            <button onclick="closeMsgBar()">✕</button>
+        </div>
+
+        <div class="tool-opts" id="toolOpts" style="display:none">
+            <label class="tool-opt"><input type="checkbox" id="optWeb"> 🔍 Web Ara</label>
+            <label class="tool-opt"><input type="checkbox" id="optMath"> 🔢 Matematik</label>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="welcome" id="welcome">
+                <div class="w-orb">✦</div>
+                <h1>Kotanene AI</h1>
+                <p>GPT'den hızlı · Bedavadan iyi · 6 farklı model</p>
+                <div class="sugs">
+                    <button class="sug" onclick="useSug(this)">Python ile web scraper yaz</button>
+                    <button class="sug" onclick="useSug(this)">Yapay zeka nasıl çalışır?</button>
+                    <button class="sug" onclick="useSug(this)">Matematik ödevime yardım et</button>
+                    <button class="sug" onclick="useSug(this)">Bir şiir yazar mısın?</button>
+                    <button class="sug" onclick="useSug(this)">Motivasyon için ne yapmalıyım?</button>
+                    <button class="sug" onclick="useSug(this)">React ile proje nasıl başlatılır?</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="file-prev" id="filePrev" style="display:none">
+            <span id="fileIcon">📎</span>
+            <span id="fileName"></span>
+            <button onclick="removeFile()">✕</button>
+        </div>
+
+        <div class="rec-bar" id="recBar" style="display:none">
+            <div class="rec-wave"><span></span><span></span><span></span><span></span></div>
+            <span>Dinleniyor...</span>
+            <button id="stopRec">■ Durdur</button>
+        </div>
+
+        <div class="input-area">
+            <div class="input-box">
+                <div class="input-left">
+                    <button class="inp-btn" id="fileBtn">📎</button>
+                    <button class="inp-btn" id="voiceBtn">🎙</button>
+                    <button class="inp-btn" id="toolOptBtn" title="Araç seçenekleri">⚡</button>
+                </div>
+                <textarea id="userInput" placeholder="Mesaj yaz..." rows="1"></textarea>
+                <button class="send-btn" id="sendBtn" disabled>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+            <input type="file" id="fileInput" accept="image/*,.pdf,.docx,.xlsx,.txt,.js,.py,.json" style="display:none">
+            <div class="input-foot">
+                <span>Enter = gönder · Shift+Enter = yeni satır</span>
+                <span id="charCount">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
