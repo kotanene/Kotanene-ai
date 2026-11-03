@@ -147,6 +147,8 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--t1);height:1
 
 /* Bars */
 .web-bar,.msg-bar{padding:7px 14px;background:var(--s2);border-bottom:1px solid var(--b1);display:flex;gap:8px;align-items:center;flex-shrink:0}
+.web-bar select{background:var(--s1);border:1px solid var(--b2);border-radius:8px;padding:7px 11px;color:var(--t1);font-family:inherit;font-size:.82rem;outline:none;cursor:pointer;width:140px;flex-shrink:0}
+.web-bar select:focus{border-color:var(--ac)}
 .web-bar input,.msg-bar input{flex:1;background:var(--s1);border:1px solid var(--b2);border-radius:8px;padding:7px 11px;color:var(--t1);font-family:inherit;font-size:.82rem;outline:none}
 .web-bar input:focus,.msg-bar input:focus{border-color:var(--ac)}
 .web-bar button,.msg-bar button{background:var(--ac);border:none;border-radius:8px;padding:7px 13px;color:#fff;font-family:inherit;font-size:.78rem;cursor:pointer}

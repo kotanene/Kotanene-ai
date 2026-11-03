@@ -4,7 +4,7 @@ let currentUser = null;
 let history = [];
 let lang = "tr";
 let personality = "normal";
-let model = "llama-3.3-70b";
+let model = "gpt-oss-120b";
 let pendingFile = null;
 let isGenerating = false;
 let currentChatId = null;
@@ -345,7 +345,7 @@ function newChat() {
     msgs.innerHTML = "";
     const w = document.createElement("div");
     w.className = "welcome"; w.id = "welcome";
-    w.innerHTML = `<div class="w-orb">✦</div><h1>Kotanene AI</h1><p>GPT'den hızlı · Bedavadan iyi · 6 farklı model</p><div class="sugs"><button class="sug" onclick="useSug(this)">Python ile web scraper yaz</button><button class="sug" onclick="useSug(this)">Yapay zeka nasıl çalışır?</button><button class="sug" onclick="useSug(this)">Matematik ödevime yardım et</button><button class="sug" onclick="useSug(this)">Bir şiir yazar mısın?</button><button class="sug" onclick="useSug(this)">Motivasyon için ne yapmalıyım?</button><button class="sug" onclick="useSug(this)">React ile proje nasıl başlatılır?</button></div>`;
+    w.innerHTML = `<div class="w-orb">✦</div><h1>Kotanene AI</h1><p>GPT'den hızlı · Bedavadan iyi · 4 farklı model</p><div class="sugs"><button class="sug" onclick="useSug(this)">Python ile web scraper yaz</button><button class="sug" onclick="useSug(this)">Yapay zeka nasıl çalışır?</button><button class="sug" onclick="useSug(this)">Matematik ödevime yardım et</button><button class="sug" onclick="useSug(this)">Bir şiir yazar mısın?</button><button class="sug" onclick="useSug(this)">Motivasyon için ne yapmalıyım?</button><button class="sug" onclick="useSug(this)">React ile proje nasıl başlatılır?</button></div>`;
     msgs.appendChild(w);
     closeSb();
 }
@@ -361,12 +361,14 @@ document.getElementById("webQ").addEventListener("keydown", e => { if (e.key ===
 window._sr = [];
 async function doWebSearch() {
     const q = document.getElementById("webQ").value.trim();
+    const engine = document.getElementById("searchEngine").value;
     if (!q) return;
     const rd = document.getElementById("webResults");
     rd.style.display = "block"; rd.innerHTML = '<div style="color:var(--t2);font-size:.75rem;padding:6px">Aranıyor...</div>';
     try {
-        const d = await api(`/api/search?q=${encodeURIComponent(q)}`);
+        const d = await api(`/api/search?q=${encodeURIComponent(q)}&engine=${engine}`);
         window._sr = d.results || [];
+        window._se = d.engine || engine;
         rd.innerHTML = window._sr.length === 0 ? '<div style="color:var(--t3);font-size:.75rem;padding:6px">Sonuç yok.</div>' :
             window._sr.map((r,i) => `<div class="web-result" onclick="useWebResult(${i})"><div class="web-result-title">${r.title||""}</div><div class="web-result-snippet">${(r.snippet||"").slice(0,110)}...</div></div>`).join("");
     } catch { rd.innerHTML = '<div style="color:#ef4444;font-size:.75rem;padding:6px">Hata.</div>'; }
@@ -497,6 +499,7 @@ async function sendMessage() {
         }
 
         const useWeb = document.getElementById("optWeb")?.checked || false;
+        const searchEngine = document.getElementById("searchEngine")?.value || "duckduckgo";
 
         if (pendingFile) {
             const fd = new FormData();
@@ -514,7 +517,7 @@ async function sendMessage() {
             const res = await fetch("/api/chat/stream", {
                 method: "POST",
                 headers: {"Content-Type":"application/json", ...(token?{"Authorization":"Bearer "+token}:{})},
-                body: JSON.stringify({ message:text, history, personality, username:currentUser?.username||"", language:lang, model, chatId:currentChatId, useWebSearch:useWeb })
+                body: JSON.stringify({ message:text, history, personality, username:currentUser?.username||"", language:lang, model, chatId:currentChatId, useWebSearch:useWeb, searchEngine:searchEngine })
             });
             hideTyping();
             const {msgDiv, bubble, bwrap} = addMsg("", false);

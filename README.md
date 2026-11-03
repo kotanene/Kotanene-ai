@@ -16,15 +16,24 @@ npm install
 npm start
 ```
 
+## Render ile Yayınlama (Ücretsiz)
+
+1. Bu repoyu GitHub'a gönder.
+2. Render Dashboard → **New** → **Blueprint** → repoyu seç.
+3. `GROQ_API_KEY` değerini gir (Render diğer gizli değerleri otomatik üretir).
+4. **Apply** de, deploy bitince verilen `onrender.com` adresini kullan.
+
+> ⚠️ Render ücretsiz planında disk kalıcı değildir. Servis yeniden başlatıldığında SQLite kullanıcı/sohbet verileri sıfırlanır. Kalıcı veri için ücretli disk veya harici veritabanı gerekir.
+
 ## Özellikler
-- 6 farklı AI modeli (Llama 4, Qwen, Kimi, DeepSeek...)
+- 4 farklı AI modeli (GPT-OSS 120B, GPT-OSS 20B, Qwen, Allam)
 - 7 kişilik modu
 - Gerçek zamanlı streaming
 - Kullanıcı sistemi (kayıt/giriş)
 - Sohbet geçmişi (SQLite)
 - Hafıza sistemi
 - Görsel oluşturma (Pollinations AI)
-- Dosya/Resim/PDF analizi
+- Dosya/PDF/Word analizi
 - Web arama
 - Matematik çözücü
 - Metin özetleme

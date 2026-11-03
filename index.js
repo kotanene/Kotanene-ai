@@ -10,13 +10,18 @@ const jwt = require("jsonwebtoken");
 const Database = require("better-sqlite3");
 
 const app = express();
+app.set("trust proxy", 1);
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "kotanene-v6-secret";
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_BASE = "https://api.groq.com/openai/v1";
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GOOGLE_SEARCH_ENGINE_ID = process.env.GOOGLE_SEARCH_ENGINE_ID;
 
 // ── Veritabanı ──
-const db = new Database(path.join(__dirname, "data", "kotanene.db"));
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
+fs.mkdirSync(DATA_DIR, { recursive: true });
+const db = new Database(path.join(DATA_DIR, "kotanene.db"));
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +38,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     title TEXT DEFAULT 'Yeni Sohbet',
-    model TEXT DEFAULT 'llama-3.3-70b',
+    model TEXT DEFAULT 'gpt-oss-120b',
     personality TEXT DEFAULT 'normal',
     created_at TEXT DEFAULT (datetime('now'))
   );
@@ -62,12 +67,10 @@ db.exec(`
 
 // ── Modeller ──
 const MODELS = {
-  "llama-4-scout": { id: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 🦙", desc: "En yeni, görsel anlayan" },
-  "llama-3.3-70b": { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B 🧠", desc: "En akıllı, en güçlü" },
-  "llama-3.1-8b": { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B ⚡", desc: "En hızlı" },
-  "qwen-32b": { id: "qwen/qwen3-32b", label: "Qwen 3 32B 🌟", desc: "Çok dilli, güçlü" },
-  "kimi-k2": { id: "moonshotai/kimi-k2-instruct", label: "Kimi K2 🌙", desc: "Uzun bağlam" },
-  "deepseek": { id: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1 🔬", desc: "Akıl yürütme uzmanı" }
+  "gpt-oss-120b": { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B 🧠", desc: "En akıllı, en güçlü" },
+  "gpt-oss-20b": { id: "openai/gpt-oss-20b", label: "GPT-OSS 20B ⚡", desc: "En hızlı" },
+  "qwen-27b": { id: "qwen/qwen3.8-27b", label: "Qwen 3.8 27B 🌟", desc: "Çok dilli, güçlü" },
+  "allam-7b": { id: "allam-2-7b", label: "Allam 2 7B 🌙", desc: "Hafif ve hızlı" }
 };
 
 // ── Kişilikler ──
@@ -86,7 +89,7 @@ const PLAN_LIMITS = { free: 30, premium: 999999 };
 // ── Middleware ──
 const limiter = rateLimit({ windowMs: 60000, max: 40, message: { error: "Çok fazla istek!" } });
 app.use(express.json({ limit: "20mb" }));
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -211,6 +214,15 @@ app.delete("/api/memories/:id", (req, res) => {
 });
 
 // ── Stats ──
+app.get("/api/health", (req, res) => {
+  try {
+    db.prepare("SELECT 1").get();
+    res.json({ ok: true, uptime: Math.round(process.uptime()) });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.get("/", (req, res) => {
   const ip = req.ip;
   const s = db.prepare("SELECT * FROM stats WHERE id=1").get();
@@ -229,15 +241,28 @@ app.get("/api/models", (req, res) => res.json(MODELS));
 // ── Web arama ──
 app.get("/api/search", limiter, async (req, res) => {
   const q = req.query.q;
+  const engine = req.query.engine || "duckduckgo";
   if (!q) return res.json({ results: [] });
+  
   try {
-    const r = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`, { headers: { "User-Agent": "KotaneneAI/6.0" } });
-    const d = await r.json();
-    const results = [];
-    if (d.AbstractText) results.push({ title: d.Heading, snippet: d.AbstractText, url: d.AbstractURL });
-    (d.RelatedTopics || []).slice(0, 5).forEach(t => { if (t.Text) results.push({ title: t.Text.split(" - ")[0], snippet: t.Text, url: t.FirstURL }); });
-    res.json({ results });
-  } catch { res.json({ results: [] }); }
+    if (engine === "google" && GOOGLE_API_KEY && GOOGLE_SEARCH_ENGINE_ID) {
+      const r = await fetch(`https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_SEARCH_ENGINE_ID}&q=${encodeURIComponent(q)}&num=5`);
+      const d = await r.json();
+      const results = (d.items || []).map(item => ({
+        title: item.title,
+        snippet: item.snippet,
+        url: item.link
+      }));
+      res.json({ results, engine: "google" });
+    } else {
+      const r = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`, { headers: { "User-Agent": "KotaneneAI/6.0" } });
+      const d = await r.json();
+      const results = [];
+      if (d.AbstractText) results.push({ title: d.Heading, snippet: d.AbstractText, url: d.AbstractURL });
+      (d.RelatedTopics || []).slice(0, 5).forEach(t => { if (t.Text) results.push({ title: t.Text.split(" - ")[0], snippet: t.Text, url: t.FirstURL }); });
+      res.json({ results, engine: "duckduckgo" });
+    }
+  } catch { res.json({ results: [], engine: engine || "duckduckgo" }); }
 });
 
 // ── Görsel oluşturma ──
@@ -251,7 +276,7 @@ app.post("/api/generate-image", limiter, async (req, res) => {
         const tr = await fetch(`${GROQ_BASE}/chat/completions`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Translate to English (image prompt only, no explanation): ${prompt}` }], max_tokens: 150 })
+          body: JSON.stringify({ model: "openai/gpt-oss-20b", messages: [{ role: "user", content: `Translate to English (image prompt only, no explanation): ${prompt}` }], max_tokens: 150 })
         });
         const td = await tr.json();
         eng = td.choices?.[0]?.message?.content?.trim() || prompt;
@@ -271,7 +296,7 @@ app.post("/api/analyze-code", limiter, async (req, res) => {
       method: "POST",
       headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           { role: "system", content: "Sen bir kod analiz uzmanısın. Verilen kodu analiz et, hataları bul, çıktıyı tahmin et ve iyileştirme öner. Türkçe cevap ver." },
           { role: "user", content: `${lang || 'Kod'} analiz et:\n\`\`\`\n${code}\n\`\`\`` }
@@ -292,7 +317,7 @@ app.post("/api/math", limiter, async (req, res) => {
       method: "POST",
       headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "deepseek-r1-distill-llama-70b",
+        model: "openai/gpt-oss-120b",
         messages: [
           { role: "system", content: "Sen bir matematik uzmanısın. Adım adım çöz, formülleri göster, sonucu açıkla. Türkçe cevap ver." },
           { role: "user", content: problem }
@@ -313,7 +338,7 @@ app.post("/api/summarize", limiter, async (req, res) => {
       method: "POST",
       headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           { role: "system", content: `Metni ${length === 'kısa' ? '3-4 cümle' : length === 'uzun' ? 'detaylı' : '1 paragraf'} ile özetle. Türkçe.` },
           { role: "user", content: text }
@@ -334,7 +359,7 @@ app.post("/api/translate", limiter, async (req, res) => {
       method: "POST",
       headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "openai/gpt-oss-20b",
         messages: [
           { role: "system", content: `Sadece çeviriyi ver, başka hiçbir şey yazma. Hedef dil: ${to || 'İngilizce'}` },
           { role: "user", content: text }
@@ -377,7 +402,7 @@ app.post("/api/chat-file", limiter, upload.single("file"), async (req, res) => {
       userContent = [{ type: "text", text: `${message || "Bu dosyayı analiz et:"}\n\n${text}` }];
     }
 
-    const modelId = file.mimetype.startsWith("image/") ? MODELS["llama-4-scout"].id : (MODELS[model]?.id || MODELS["llama-3.3-70b"].id);
+    const modelId = file.mimetype.startsWith("image/") ? MODELS["gpt-oss-120b"].id : (MODELS[model]?.id || MODELS["gpt-oss-120b"].id);
 
     const r = await fetch(`${GROQ_BASE}/chat/completions`, {
       method: "POST",
@@ -415,7 +440,8 @@ app.post("/api/chat/stream", limiter, async (req, res) => {
   let searchContext = "";
   if (useWebSearch) {
     try {
-      const sr = await fetch(`http://localhost:${port}/api/search?q=${encodeURIComponent(message)}`);
+      const engine = req.body.searchEngine || "duckduckgo";
+      const sr = await fetch(`http://localhost:${port}/api/search?q=${encodeURIComponent(message)}&engine=${engine}`);
       const sd = await sr.json();
       if (sd.results?.length) {
         searchContext = "\n\n[Web Arama Sonuçları]:\n" + sd.results.slice(0,3).map(r => `• ${r.title}: ${r.snippet}`).join("\n");
@@ -433,7 +459,7 @@ app.post("/api/chat/stream", limiter, async (req, res) => {
   const lang = language === "en" ? " Always respond in English." : " Türkçe konuş.";
   const userCtx = username ? ` Kullanıcının adı: ${username}.` : "";
   const systemPrompt = (PERSONALITIES[personality] || PERSONALITIES.normal) + userCtx + lang + memoryContext;
-  const modelId = MODELS[model]?.id || MODELS["llama-3.3-70b"].id;
+  const modelId = MODELS[model]?.id || MODELS["gpt-oss-120b"].id;
 
   const finalMessage = message + searchContext;
 

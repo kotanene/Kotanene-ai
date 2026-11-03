@@ -9,6 +9,9 @@ logs/
 *.swp
 *.swo
 *~
+*.save
+boot.py
+get_ip.py
 dist/
 build/
 .cache/

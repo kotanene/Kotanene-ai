@@ -64,7 +64,7 @@
                 <div class="plan-name">Premium</div>
                 <div class="plan-price">₺99<small>/ay</small></div>
                 <div class="plan-feat">• Sınırsız mesaj</div>
-                <div class="plan-feat">• 6 model</div>
+                <div class="plan-feat">• 4 model</div>
                 <div class="plan-feat">• Hafıza sistemi</div>
                 <div class="plan-feat">• Görsel oluşturma</div>
                 <button class="upgrade-btn" onclick="doUpgrade()">Premium'a Geç →</button>
@@ -180,7 +180,7 @@
             <button class="menu-btn" id="menuBtn">☰</button>
             <div class="topbar-mid">
                 <div class="online-dot"></div>
-                <span id="modelLabel">Llama 3.3 70B 🧠</span>
+                <span id="modelLabel">GPT-OSS 120B 🧠</span>
             </div>
             <div class="topbar-right">
                 <button class="tb-btn" id="webSearchToggle" title="Web Ara">🔍</button>
@@ -192,6 +192,10 @@
         </div>
 
         <div class="web-bar" id="webBar" style="display:none">
+            <select id="searchEngine">
+                <option value="duckduckgo">DuckDuckGo</option>
+                <option value="google">Google</option>
+            </select>
             <input id="webQ" placeholder="Web'de ara...">
             <button onclick="doWebSearch()">Ara</button>
             <button onclick="closeWebBar()">✕</button>
@@ -212,7 +216,7 @@
             <div class="welcome" id="welcome">
                 <div class="w-orb">✦</div>
                 <h1>Kotanene AI</h1>
-                <p>GPT'den hızlı · Bedavadan iyi · 6 farklı model</p>
+                <p>GPT'den hızlı · Bedavadan iyi · 4 farklı model</p>
                 <div class="sugs">
                     <button class="sug" onclick="useSug(this)">Python ile web scraper yaz</button>
                     <button class="sug" onclick="useSug(this)">Yapay zeka nasıl çalışır?</button>
