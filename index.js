@@ -217,7 +217,7 @@ app.delete("/api/memories/:id", (req, res) => {
 app.get("/api/health", (req, res) => {
   try {
     db.prepare("SELECT 1").get();
-    res.json({ ok: true, uptime: Math.round(process.uptime()) });
+    res.json({ ok: true, uptime: Math.round(process.uptime()), groqConfigured: Boolean(GROQ_API_KEY), groqKeyLength: (GROQ_API_KEY || "").length });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
