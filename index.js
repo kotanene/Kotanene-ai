@@ -276,7 +276,7 @@ app.post("/api/generate-image", limiter, async (req, res) => {
         const tr = await fetch(`${GROQ_BASE}/chat/completions`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "openai/gpt-oss-20b", messages: [{ role: "user", content: `Translate to English (image prompt only, no explanation): ${prompt}` }], max_tokens: 150 })
+          body: JSON.stringify({ model: "openai/gpt-oss-20b", messages: [{ role: "user", content: `Translate to English (image prompt only, no explanation): ${prompt}` }], max_tokens: 500 })
         });
         const td = await tr.json();
         eng = td.choices?.[0]?.message?.content?.trim() || prompt;
@@ -301,7 +301,7 @@ app.post("/api/analyze-code", limiter, async (req, res) => {
           { role: "system", content: "Sen bir kod analiz uzmanısın. Verilen kodu analiz et, hataları bul, çıktıyı tahmin et ve iyileştirme öner. Türkçe cevap ver." },
           { role: "user", content: `${lang || 'Kod'} analiz et:\n\`\`\`\n${code}\n\`\`\`` }
         ],
-        max_tokens: 1500
+        max_tokens: 2500
       })
     });
     const d = await r.json();
@@ -322,7 +322,7 @@ app.post("/api/math", limiter, async (req, res) => {
           { role: "system", content: "Sen bir matematik uzmanısın. Adım adım çöz, formülleri göster, sonucu açıkla. Türkçe cevap ver." },
           { role: "user", content: problem }
         ],
-        max_tokens: 2000
+        max_tokens: 3000
       })
     });
     const d = await r.json();
@@ -343,7 +343,7 @@ app.post("/api/summarize", limiter, async (req, res) => {
           { role: "system", content: `Metni ${length === 'kısa' ? '3-4 cümle' : length === 'uzun' ? 'detaylı' : '1 paragraf'} ile özetle. Türkçe.` },
           { role: "user", content: text }
         ],
-        max_tokens: 800
+        max_tokens: 1500
       })
     });
     const d = await r.json();
@@ -364,7 +364,7 @@ app.post("/api/translate", limiter, async (req, res) => {
           { role: "system", content: `Sadece çeviriyi ver, başka hiçbir şey yazma. Hedef dil: ${to || 'İngilizce'}` },
           { role: "user", content: text }
         ],
-        max_tokens: 1000
+        max_tokens: 1500
       })
     });
     const d = await r.json();
@@ -407,7 +407,7 @@ app.post("/api/chat-file", limiter, upload.single("file"), async (req, res) => {
     const r = await fetch(`${GROQ_BASE}/chat/completions`, {
       method: "POST",
       headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: modelId, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userContent }], max_tokens: 2000 })
+      body: JSON.stringify({ model: modelId, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userContent }], max_tokens: 3000 })
     });
     const d = await r.json();
     const response = d.choices?.[0]?.message?.content || "Dosya analiz edilemedi.";
